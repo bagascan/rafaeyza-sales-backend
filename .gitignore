@@ -1,0 +1,41 @@
+# Dependencies
+# Direktori ini berisi semua paket npm yang diinstal dan dapat diinstal ulang kapan saja menggunakan 'npm install'
+/node_modules
+
+# Production
+# Direktori builad yang dihasilkan
+/build
+/dist
+
+# Environment variables
+# File ini berisi variabel sensitif seperti kunci API, kredensial database, dll.
+# Jangan pernah mengunggah file .env ke repository publik.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Log files
+# File log yang dihasilkan selama pengembangan atau di production
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Temporary files and OS-specific files
+# File yang dibuat oleh sistem operasi atau editor teks
+.DS_Store
+Thumbs.db
+
+# IDE configuration files
+# Folder konfigurasi untuk editor kode seperti VSCode atau WebStorm
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Test coverage reports
+/coverage
