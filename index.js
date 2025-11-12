@@ -41,7 +41,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/users', require('./routes/userRoutes')); // Tambahkan ini
 app.use('/api/settings', require('./routes/settingsRoutes')); // NEW: Register settings routes
 app.use('/api/cron', require('./routes/cronRoutes')); // Daftarkan rute cron baru
-
+app.use('/api/maps', require('./routes/mapRoutes'));
 // Basic route
 app.get('/', (req, res) => {
   res.send('Rafaeyza Sales Backend API is running!');
