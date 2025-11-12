@@ -20,7 +20,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+// Konfigurasi CORS yang lebih aman untuk produksi
+const corsOptions = {
+  // Izinkan hanya domain frontend Anda dan port pengembangan lokal
+  origin: [process.env.FRONTEND_URL, 'http://localhost:3000'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // For parsing application/json
 
 // Define Routes
@@ -41,8 +48,8 @@ app.get('/', (req, res) => {
 });
 
 // --- BLOK FRONTEND (HARUS DI AKHIR SEBELUM EXPORT) ---
-// Sajikan aplikasi React yang sudah di-build HANYA untuk lingkungan produksi lokal
-if (process.env.NODE_ENV !== 'vercel') {
+// Jalankan server HANYA jika tidak di lingkungan Vercel (untuk pengembangan lokal)
+if (process.env.VERCEL_ENV !== 'production') {
   const buildPath = path.resolve(__dirname, '../build');
   app.use(express.static(buildPath));
 
@@ -58,4 +65,4 @@ if (process.env.NODE_ENV !== 'vercel') {
 }
 // --- AKHIR BLOK FRONTEND ---
 
-module.exports = app; // Export the app for Vercel
+module.exports = app; // Selalu export app untuk Vercel dan untuk testing
