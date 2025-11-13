@@ -41,7 +41,11 @@ router.get('/', auth, async (req, res) => { // 2. Tambahkan 'auth'
     const totalCustomers = await Customer.countDocuments(query);
     const totalPages = Math.ceil(totalCustomers / limit);
 
-    const customers = await Customer.find(query).sort(sort).skip(skip).limit(limit);
+    const customers = await Customer.find(query)
+      .populate('user', 'name') // <-- TAMBAHKAN BARIS INI
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
 
     res.json({ customers, totalPages, currentPage: page });
   } catch (err) {
@@ -143,13 +147,17 @@ router.put('/:id', auth, async (req, res) => { // 5. Tambahkan 'auth'
     customer.location.latitude = latitude;
     customer.location.longitude = longitude;
 
-    // NEW: Allow admin to re-assign the customer
-    if (req.user.role === 'admin' && userId) {
+    // Allow admin to re-assign the customer
+    // Cek jika userId dikirim DAN berbeda dari yang sudah ada
+    if (req.user.role === 'admin' && userId && customer.user.toString() !== userId) {
       customer.user = userId;
+      // Secara eksplisit tandai field 'user' sebagai telah dimodifikasi
+      customer.markModified('user');
     }
 
     await customer.save();
-    res.json(customer);
+    const populatedCustomer = await Customer.findById(customer._id).populate('user', 'name');
+    res.json(populatedCustomer);
 
     // --- NEW: Send notification if the assignment has changed ---
     const newAssignedUserId = customer.user.toString();
