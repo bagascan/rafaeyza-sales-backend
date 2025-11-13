@@ -55,14 +55,15 @@ router.get('/', auth, async (req, res) => { // 2. Tambahkan 'auth'
 // @access  Private
 router.get('/:id', auth, async (req, res) => { // 3. Tambahkan 'auth'
   try {
-    const customer = await Customer.findById(req.params.id);
+    // Populate the 'user' field to get the sales person's name and ID
+    const customer = await Customer.findById(req.params.id).populate('user', 'name');
     if (!customer) {
       return res.status(404).json({ msg: 'Pelanggan tidak ditemukan.' });
     }
 
     // NEW: Authorization Check
     // Izinkan akses hanya jika pengguna adalah admin atau pemilik pelanggan ini.
-    if (req.user.role !== 'admin' && customer.user.toString() !== req.user.id) {
+    if (req.user.role !== 'admin' && customer.user._id.toString() !== req.user.id) {
       return res.status(403).json({ msg: 'Akses ditolak. Anda bukan pemilik pelanggan ini.' });
     }
 
