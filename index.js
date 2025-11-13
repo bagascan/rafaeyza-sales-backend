@@ -30,6 +30,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json()); // For parsing application/json
 
+// NEW: Enable pre-flight across-the-board
+app.options('*', cors(corsOptions));
+
 // Define Routes
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));

@@ -21,15 +21,25 @@ const UserSchema = new mongoose.Schema({
     enum: ['sales', 'admin'], // Only allows these two values
     default: 'sales', // New users will be 'sales' by default
   },
-  // --- NEW: Field to store the push notification subscription object ---
+    // 2. GUNAKAN SKEMA BARU di sini
   pushSubscription: {
-    type: Object,
+    type: PushSubscriptionSchema,
     default: null,
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+}, { timestamps: true });
 
-});
+
+// 1. BUAT SKEMA BARU untuk struktur PushSubscription
+const PushSubscriptionSchema = new mongoose.Schema({
+  endpoint: { type: String, required: true, unique: true },
+  expirationTime: { type: Number, default: null },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true }
+  }
+}, { _id: false }); // _id: false karena ini adalah sub-dokumen
 
 // Middleware to hash password before saving
 UserSchema.pre('save', async function (next) {

@@ -109,6 +109,56 @@ router.get('/sales-users', auth, async (req, res) => {
   }
 });
 
+// @route   PUT api/auth/update-details
+// @desc    Update user's name
+// @access  Private
+router.put('/update-details', auth, async (req, res) => {
+  const { name } = req.body;
+
+  try {
+    // Cari pengguna berdasarkan ID dari token
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'Pengguna tidak ditemukan.' });
+    }
+
+    // Update nama dan simpan
+    user.name = name || user.name;
+    await user.save({ validateBeforeSave: false }); // Simpan tanpa validasi password
+
+    res.json({ msg: 'Profil berhasil diperbarui.' });
+  } catch (err) {
+    console.error('Update details error:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/auth/change-password
+// @desc    Change user's password
+// @access  Private
+router.put('/change-password', auth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'Pengguna tidak ditemukan.' });
+
+    // Cek apakah password saat ini cocok
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(400).json({ msg: 'Password saat ini salah.' });
+
+    // Set password baru (middleware pre-save akan otomatis melakukan hashing)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ msg: 'Password berhasil diubah.' });
+  } catch (err) {
+    console.error('Change password error:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // --- NEW: FORGOT PASSWORD ---
 // @route   POST api/auth/forgot-password
 // @desc    Request a password reset link
