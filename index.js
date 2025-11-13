@@ -21,9 +21,18 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 // Konfigurasi CORS yang lebih aman untuk produksi
+const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000'];
+
 const corsOptions = {
-  // Izinkan hanya domain frontend Anda dan port pengembangan lokal
-  origin: [process.env.FRONTEND_URL, 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Izinkan permintaan tanpa origin (seperti dari Postman atau aplikasi mobile)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   optionsSuccessStatus: 200
 };
 
