@@ -54,6 +54,10 @@ const visitSchema = new Schema({
     type: Number,
     default: 0,
   },
+  attendancePhoto: {
+    type: String,
+    default: null,
+  },
 }, {
   timestamps: true,
 });

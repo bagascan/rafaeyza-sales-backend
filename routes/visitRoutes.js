@@ -104,18 +104,21 @@ router.post('/', auth, upload.any(), async (req, res) => {
     const photos = {};
     if (req.files) {
         req.files.forEach(file => {
+            // Handle attendance photo separately and skip the rest of the logic for it
+            if (file.fieldname === 'attendancePhoto') {
+              return;
+            }
+
             // Filename format is 'photo_PRODUCTID_before' or 'photo_PRODUCTID_after'
             const parts = file.fieldname.split('_');
+            // If the fieldname doesn't match the expected format, skip it to prevent crash
+            if (parts.length < 3) return;
+
             const productId = parts[1];
             const type = parts[2]; // 'before' or 'after'
 
             if (!photos[productId]) {
                 photos[productId] = { before: [], after: [] };
-            }
-            // Handle attendance photo separately
-            if (file.fieldname === 'attendancePhoto') {
-              // You might want to store this differently, e.g., on the root of the visit document
-              return;
             }
             photos[productId][type].push(file.path);
         });
@@ -126,10 +129,8 @@ router.post('/', auth, upload.any(), async (req, res) => {
       customer: customer._id,
       inventory: validatedInventory,
       totalProfit: totalProfit, // Save the calculated total profit
-      photos: {
-        ...photos,
-        attendance: attendancePhoto ? [attendancePhoto.path] : [], // Save attendance photo path
-      },
+      // Store attendance photo directly on the visit document, not inside the 'photos' map
+      attendancePhoto: attendancePhoto ? attendancePhoto.path : null,
     });
 
     const savedVisit = await newVisit.save();
