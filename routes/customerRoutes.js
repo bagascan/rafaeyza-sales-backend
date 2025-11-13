@@ -57,8 +57,15 @@ router.get('/:id', auth, async (req, res) => { // 3. Tambahkan 'auth'
   try {
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).json({ msg: 'Customer not found' });
+      return res.status(404).json({ msg: 'Pelanggan tidak ditemukan.' });
     }
+
+    // NEW: Authorization Check
+    // Izinkan akses hanya jika pengguna adalah admin atau pemilik pelanggan ini.
+    if (req.user.role !== 'admin' && customer.user.toString() !== req.user.id) {
+      return res.status(403).json({ msg: 'Akses ditolak. Anda bukan pemilik pelanggan ini.' });
+    }
+
     res.json(customer);
   } catch (err) {
     console.error(err.message);
@@ -70,10 +77,14 @@ router.get('/:id', auth, async (req, res) => { // 3. Tambahkan 'auth'
 // @desc    Create a new customer
 // @access  Private
 router.post('/', auth, async (req, res) => { // 4. Tambahkan 'auth'
-  const { name, address, phone, latitude, longitude } = req.body; // Corrected declaration
+  const { name, address, phone, latitude, longitude, userId } = req.body;
   try {
+    // Tentukan ID pengguna yang akan ditugaskan.
+    // Jika admin menyediakan userId, gunakan itu. Jika tidak, gunakan ID pengguna yang sedang login.
+    const assignedUserId = (req.user.role === 'admin' && userId) ? userId : req.user.id;
+
     const newCustomer = new Customer({
-      user: req.user.id,
+      user: assignedUserId,
       name,
       address,
       phone,
@@ -113,23 +124,28 @@ router.post('/', auth, async (req, res) => { // 4. Tambahkan 'auth'
 // @desc    Update a customer
 // @access  Private
 router.put('/:id', auth, async (req, res) => { // 5. Tambahkan 'auth'
-  const { name, address, phone, latitude, longitude } = req.body; // Corrected declaration
+  const { name, address, phone, latitude, longitude, userId } = req.body;
   try {
     let customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ msg: 'Customer not found' });
+    if (!customer) return res.status(404).json({ msg: 'Pelanggan tidak ditemukan.' });
     const oldAssignedUserId = customer.user.toString(); // Store old user ID
 
     // Authorization check: Ensure the user owns the customer or is an admin
     if (customer.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(401).json({ msg: 'Akses ditolak.' });
+      return res.status(403).json({ msg: 'Akses ditolak.' });
     }
 
     customer.name = name;
     customer.address = address;
     customer.phone = phone;
-     // Update location data
+    // Update location data
     customer.location.latitude = latitude;
     customer.location.longitude = longitude;
+
+    // NEW: Allow admin to re-assign the customer
+    if (req.user.role === 'admin' && userId) {
+      customer.user = userId;
+    }
 
     await customer.save();
     res.json(customer);
