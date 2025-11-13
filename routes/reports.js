@@ -35,7 +35,7 @@ router.get('/visits-by-date', [auth, admin], async (req, res) => {
     })
     .populate({
         path: 'user',
-        select: 'name', // Hanya ambil nama dari user (sales)
+        select: 'name', // FIX: Ensure user name is populated
     })
     .sort({ createdAt: 'asc' }); // Urutkan berdasarkan waktu untuk rute yang benar
 
@@ -74,21 +74,29 @@ router.get('/sales-performance', [auth, admin], async (req, res) => {
 
     const visits = await Visit.find(query)
       .populate('customer', 'name')
-      .populate('inventory.product', 'price')
+      .populate('inventory.product', 'price profit') // FIX: Also populate the 'profit' field
       .sort({ createdAt: -1 });
 
-    // Hitung total penjualan dari kunjungan yang ditemukan
-    const totalSales = visits.reduce((acc, visit) => acc + visit.inventory.reduce((visitTotal, item) => {
+    // Calculate total sales and total profit from the found visits
+    let totalSales = 0;
+    let totalProfit = 0;
+
+    visits.forEach(visit => {
+      visit.inventory.forEach(item => {
         // FIX: Use the correct sales calculation logic.
         // `addedStock` is for the next cycle and should not be part of the current sale.
         const sold = item.initialStock - (item.finalStock + item.returns);
-
-        return visitTotal + (sold > 0 ? sold * (item.product?.price || 0) : 0);
-    }, 0), 0);
+        if (sold > 0 && item.product) {
+          totalSales += sold * (item.product.price || 0);
+          totalProfit += sold * (item.product.profit || 0);
+        }
+      });
+    });
 
     res.json({
       summary: {
         totalSales,
+        totalProfit, // FIX: Include totalProfit in the response
         visitCount: visits.length,
       },
       visits, // Kirim juga daftar detail kunjungannya
