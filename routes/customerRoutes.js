@@ -61,6 +61,10 @@ router.get('/:id', auth, async (req, res) => { // 3. Tambahkan 'auth'
   try {
     // Populate the 'user' field to get the sales person's name and ID
     const customer = await Customer.findById(req.params.id).populate('user', 'name');
+    
+    // --- DEBUG ---
+    console.log('[DEBUG] GET /customers/:id - Populated Customer:', JSON.stringify(customer, null, 2));
+
     if (!customer) {
       return res.status(404).json({ msg: 'Pelanggan tidak ditemukan.' });
     }
@@ -99,7 +103,9 @@ router.post('/', auth, async (req, res) => { // 4. Tambahkan 'auth'
     });
 
     const customer = await newCustomer.save();
-    res.status(201).json(customer);
+    // Populate the user field before sending the response for newly created customer
+    const populatedCustomer = await Customer.findById(customer._id).populate('user', 'name');
+    res.status(201).json(populatedCustomer);
 
     // --- NEW: Send notification to the assigned sales user ---
     try {
@@ -130,10 +136,16 @@ router.post('/', auth, async (req, res) => { // 4. Tambahkan 'auth'
 // @access  Private
 router.put('/:id', auth, async (req, res) => { // 5. Tambahkan 'auth'
   const { name, address, phone, latitude, longitude, userId } = req.body;
+  
+  // --- DEBUG ---
+  console.log('[DEBUG] PUT /customers/:id - Request Body:', req.body);
+
   try {
     let customer = await Customer.findById(req.params.id);
     if (!customer) return res.status(404).json({ msg: 'Pelanggan tidak ditemukan.' });
     const oldAssignedUserId = customer.user.toString(); // Store old user ID
+    // --- DEBUG ---
+    console.log(`[DEBUG] PUT /customers/:id - Initial Customer State. Assigned User: ${oldAssignedUserId}`);
 
     // Authorization check: Ensure the user owns the customer or is an admin
     if (customer.user.toString() !== req.user.id && req.user.role !== 'admin') {
@@ -147,15 +159,28 @@ router.put('/:id', auth, async (req, res) => { // 5. Tambahkan 'auth'
     customer.location.latitude = latitude;
     customer.location.longitude = longitude;
 
-    // Allow admin to re-assign the customer
-    // Cek jika userId dikirim DAN berbeda dari yang sudah ada
-    if (req.user.role === 'admin' && userId && customer.user.toString() !== userId) {
-      customer.user = userId;
-      // Secara eksplisit tandai field 'user' sebagai telah dimodifikasi
-      customer.markModified('user');
+    // NEW: Handle user assignment by admin
+    // If an admin is making the request AND a userId is provided in the body
+    if (req.user.role === 'admin' && userId) {      
+      // --- DEBUG ---
+      console.log(`[DEBUG] PUT /customers/:id - Admin is editing. Incoming userId: ${userId}. Current userId: ${customer.user.toString()}`);
+
+      // Only update and markModified if the assigned user is actually different
+      if (customer.user.toString() !== userId) {
+        // --- DEBUG ---
+        console.log('[DEBUG] PUT /customers/:id - User ID is different. Updating and marking as modified.');
+        customer.user = userId;
+        // Explicitly mark the 'user' field as modified to ensure Mongoose saves the change
+        // This is crucial if Mongoose's change tracking doesn't detect the ObjectId change directly.
+        customer.markModified('user'); 
+      }
     }
+    
+    // --- DEBUG ---
+    console.log('[DEBUG] PUT /customers/:id - Customer object before save:', JSON.stringify(customer, null, 2));
 
     await customer.save();
+    
     const populatedCustomer = await Customer.findById(customer._id).populate('user', 'name');
     res.json(populatedCustomer);
 
