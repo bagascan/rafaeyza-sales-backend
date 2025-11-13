@@ -129,6 +129,7 @@ router.post('/', auth, upload.any(), async (req, res) => {
       customer: customer._id,
       inventory: validatedInventory,
       totalProfit: totalProfit, // Save the calculated total profit
+      photos: photos, // <-- FIX: Include the processed photos object
       // Store attendance photo directly on the visit document, not inside the 'photos' map
       attendancePhoto: attendancePhoto ? attendancePhoto.path : null,
     });
