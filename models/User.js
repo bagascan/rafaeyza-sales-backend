@@ -1,6 +1,16 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// 1. BUAT SKEMA BARU untuk struktur PushSubscription (PINDAHKAN KE SINI)
+const PushSubscriptionSchema = new mongoose.Schema({
+  endpoint: { type: String, required: true, unique: true },
+  expirationTime: { type: Number, default: null },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true }
+  }
+}, { _id: false }); // _id: false karena ini adalah sub-dokumen
+
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -21,7 +31,7 @@ const UserSchema = new mongoose.Schema({
     enum: ['sales', 'admin'], // Only allows these two values
     default: 'sales', // New users will be 'sales' by default
   },
-    // 2. GUNAKAN SKEMA BARU di sini
+  // 2. GUNAKAN SKEMA BARU di sini
   pushSubscription: {
     type: PushSubscriptionSchema,
     default: null,
@@ -29,17 +39,6 @@ const UserSchema = new mongoose.Schema({
   passwordResetToken: String,
   passwordResetExpires: Date,
 }, { timestamps: true });
-
-
-// 1. BUAT SKEMA BARU untuk struktur PushSubscription
-const PushSubscriptionSchema = new mongoose.Schema({
-  endpoint: { type: String, required: true, unique: true },
-  expirationTime: { type: Number, default: null },
-  keys: {
-    p256dh: { type: String, required: true },
-    auth: { type: String, required: true }
-  }
-}, { _id: false }); // _id: false karena ini adalah sub-dokumen
 
 // Middleware to hash password before saving
 UserSchema.pre('save', async function (next) {
