@@ -79,7 +79,10 @@ router.get('/sales-performance', [auth, admin], async (req, res) => {
 
     // Hitung total penjualan dari kunjungan yang ditemukan
     const totalSales = visits.reduce((acc, visit) => acc + visit.inventory.reduce((visitTotal, item) => {
-        const sold = (item.initialStock + (item.addedStock || 0)) - item.finalStock - item.returns;
+        // FIX: Use the correct sales calculation logic.
+        // `addedStock` is for the next cycle and should not be part of the current sale.
+        const sold = item.initialStock - (item.finalStock + item.returns);
+
         return visitTotal + (sold > 0 ? sold * (item.product?.price || 0) : 0);
     }, 0), 0);
 
@@ -137,7 +140,9 @@ router.get('/product-stock', [auth, admin], async (req, res) => {
       // Hitung total terjual dari semua kunjungan
       const productItemInVisit = visit.inventory.find(item => item.product.toString() === productId);
       if (productItemInVisit) {
-        const sold = (productItemInVisit.initialStock + (productItemInVisit.addedStock || 0)) - productItemInVisit.finalStock - productItemInVisit.returns;
+        // FIX: Use the correct sales calculation logic.
+        const sold = productItemInVisit.initialStock - (productItemInVisit.finalStock + productItemInVisit.returns);
+
         if (sold > 0) {
           totalSold += sold;
         }

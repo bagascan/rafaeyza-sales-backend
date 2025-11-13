@@ -40,7 +40,12 @@ router.get('/summary', auth, async (req, res) => {
     let salesToday = 0;
     visitsToday.forEach(visit => {
       visit.inventory.forEach(item => {
-        const sold = (item.initialStock + (item.addedStock || 0)) - item.finalStock - item.returns;
+        // FIX: Corrected sales calculation logic.
+        // The number of items available for sale is the initial stock.
+        // The number of items brought back is the final stock plus any returns.
+        // Items added (`addedStock`) are for the *next* cycle and shouldn't be in this calculation.
+        const sold = item.initialStock - (item.finalStock + item.returns);
+
         // Check if product exists to prevent crash on deleted products
         if (sold > 0 && item.product) {
           salesToday += sold * item.product.price;

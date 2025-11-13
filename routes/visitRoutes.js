@@ -257,7 +257,10 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.get('/customer/:customerId/last', auth, async (req, res) => {
   try {
-    const lastVisit = await Visit.findOne({ user: req.user.id, customer: req.params.customerId })
+    // FIX: Find the last visit for the customer, regardless of which user made it.
+    // This ensures that the initial stock is correctly retrieved even if the customer
+    // was previously handled by another sales or is being checked by an admin.
+    const lastVisit = await Visit.findOne({ customer: req.params.customerId })
       .sort({ createdAt: -1 }) // Sort by creation date descending to get the latest
       .populate('inventory.product', 'name price costPrice');
 
