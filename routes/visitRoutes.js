@@ -264,6 +264,14 @@ router.get('/customer/:customerId/last', auth, async (req, res) => {
       .sort({ createdAt: -1 }) // Sort by creation date descending to get the latest
       .populate('inventory.product', 'name price costPrice');
 
+    // --- DEBUG ---
+    console.log(`[DEBUG] GET /visits/customer/${req.params.customerId}/last - Customer ID: ${req.params.customerId}`);
+    console.log(`[DEBUG] GET /visits/customer/${req.params.customerId}/last - Found lastVisit: ${lastVisit ? 'YES' : 'NO'}`);
+    if (lastVisit) {
+      console.log(`[DEBUG] GET /visits/customer/${req.params.customerId}/last - Last Visit ID: ${lastVisit._id}`);
+      console.log(`[DEBUG] GET /visits/customer/${req.params.customerId}/last - Last Visit Inventory Count: ${lastVisit.inventory.length}`);
+    }
+
     if (!lastVisit) {
       return res.status(404).json({ msg: 'No previous visits found for this customer.' });
     }
