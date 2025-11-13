@@ -6,6 +6,7 @@ const path = require('path');
 const Visit = require('../models/Visit');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const Settings = require('../models/Settings');
 const User = require('../models/User'); // 1. Import model User
 const auth = require('../middleware/authMiddleware');
 const webpush = require('web-push'); // 2. Import web-push
