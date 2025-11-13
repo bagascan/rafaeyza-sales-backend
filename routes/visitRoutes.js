@@ -11,16 +11,10 @@ const User = require('../models/User'); // 1. Import model User
 const auth = require('../middleware/authMiddleware');
 const webpush = require('web-push'); // 2. Import web-push
 
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  }
-});
-
+// --- FIX FOR VERCEL ---
+// Use memoryStorage to handle files as buffers in memory, not on disk.
+// Vercel's filesystem is read-only, so diskStorage will fail.
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Haversine formula to calculate distance between two lat/lon points in meters
@@ -120,7 +114,11 @@ router.post('/', auth, upload.any(), async (req, res) => {
             if (!photos[productId]) {
                 photos[productId] = { before: [], after: [] };
             }
-            photos[productId][type].push(file.path);
+
+            // --- FIX FOR VERCEL ---
+            // Convert the image buffer to a Base64 string to store in the database
+            const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            photos[productId][type].push(base64Image);
         });
     }
 
@@ -131,7 +129,11 @@ router.post('/', auth, upload.any(), async (req, res) => {
       totalProfit: totalProfit, // Save the calculated total profit
       photos: photos, // <-- FIX: Include the processed photos object
       // Store attendance photo directly on the visit document, not inside the 'photos' map
-      attendancePhoto: attendancePhoto ? attendancePhoto.path : null,
+      // --- FIX FOR VERCEL ---
+      // Convert attendance photo buffer to Base64 string as well
+      attendancePhoto: attendancePhoto
+        ? `data:${attendancePhoto.mimetype};base64,${attendancePhoto.buffer.toString('base64')}`
+        : null,
     });
 
     const savedVisit = await newVisit.save();
