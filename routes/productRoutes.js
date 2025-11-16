@@ -38,6 +38,24 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// @route   GET api/products/barcode/:barcode
+// @desc    Get product by barcode
+// @access  Private
+router.get('/barcode/:barcode', auth, async (req, res) => {
+  try {
+    // Cari produk berdasarkan field 'barcode'
+    const product = await Product.findOne({ barcode: req.params.barcode });
+    if (!product) {
+      // Kirim status 404 jika tidak ditemukan agar frontend bisa menanganinya
+      return res.status(404).json({ msg: 'Produk dengan barcode ini tidak ditemukan.' });
+    }
+    res.json(product);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   GET api/products/:id
 // @desc    Get single product by ID
 // @access  Private

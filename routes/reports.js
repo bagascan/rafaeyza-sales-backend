@@ -52,13 +52,23 @@ router.get('/visits-by-date', [auth, admin], async (req, res) => {
  * @desc    Get performance report for a specific sales user in a date range
  * @access  Private (Admin only)
  */
-router.get('/sales-performance', [auth, admin], async (req, res) => {
-  const { userId, startDate, endDate } = req.query;
+router.get('/sales-performance', [auth], async (req, res) => { // Hapus middleware 'admin'
+  const { startDate, endDate } = req.query;
+  let { userId } = req.query;
 
-  if (!userId || !startDate || !endDate) {
-    return res.status(400).json({ msg: 'Parameter userId, startDate, dan endDate diperlukan.' });
+  // Logika untuk menentukan userId berdasarkan peran pengguna
+  // Asumsi: req.user.role tersedia dari middleware auth
+  if (req.user.role !== 'admin') {
+    userId = req.user.id; // Jika bukan admin, paksa gunakan ID pengguna yang login
   }
 
+  // Validasi parameter
+  if (!userId) {
+    return res.status(400).json({ msg: 'Parameter userId diperlukan.' });
+  }
+  if (!startDate || !endDate) {
+    return res.status(400).json({ msg: 'Parameter startDate dan endDate diperlukan.' });
+  }
   try {
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
